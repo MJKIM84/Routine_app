@@ -1,17 +1,21 @@
+import { View, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Typography } from '@ui/shared/components/Typography';
+import { useThemeColors } from '@theme/index';
+import { spacing } from '@theme/spacing';
 
 export default function ModalScreen() {
+  const colors = useThemeColors();
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Typography variant="h2">Modal</Typography>
       <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
+        <Typography variant="body" style={{ color: colors.primary }}>
+          홈으로 돌아가기
+        </Typography>
       </Link>
-    </ThemedView>
+    </View>
   );
 }
 
@@ -20,10 +24,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing.xl,
   },
   link: {
-    marginTop: 15,
-    paddingVertical: 15,
+    marginTop: spacing.base,
+    paddingVertical: spacing.base,
   },
 });

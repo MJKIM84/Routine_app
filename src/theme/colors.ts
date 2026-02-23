@@ -1,0 +1,75 @@
+export const palette = {
+  sageGreen: '#1A6B3C',
+  sageGreenLight: '#2D8F54',
+  sageGreenDark: '#14522E',
+
+  warmBeige: '#F5F0E8',
+  softCream: '#FFF8F0',
+  warmWhite: '#FEFCF9',
+
+  indigo: '#5C6BC0',
+  indigoLight: '#7986CB',
+  indigoDark: '#3F51B5',
+
+  success: '#4CAF50',
+  warning: '#FF9800',
+  error: '#F44336',
+  info: '#2196F3',
+
+  glassWhite: 'rgba(255, 255, 255, 0.72)',
+  glassBorder: 'rgba(255, 255, 255, 0.35)',
+  glassShadow: 'rgba(0, 0, 0, 0.08)',
+
+  trueDark: '#0D0D1A',
+  darkSurface: '#1A1A2E',
+  darkCard: '#16213E',
+  darkGlass: 'rgba(255, 255, 255, 0.08)',
+  darkGlassBorder: 'rgba(255, 255, 255, 0.12)',
+
+  textPrimary: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+  textInverse: '#FFFFFF',
+  textDarkPrimary: '#F5F0E8',
+  textDarkSecondary: '#9CA3AF',
+};
+
+export const lightColors = {
+  background: palette.warmBeige,
+  surface: palette.softCream,
+  card: palette.glassWhite,
+  cardBorder: palette.glassBorder,
+  primary: palette.sageGreen,
+  primaryLight: palette.sageGreenLight,
+  accent: palette.indigo,
+  text: palette.textPrimary,
+  textSecondary: palette.textSecondary,
+  textTertiary: palette.textTertiary,
+  tabBarBackground: palette.glassWhite,
+  tabBarActive: palette.sageGreen,
+  tabBarInactive: palette.textTertiary,
+  statusBar: 'dark' as const,
+  success: palette.success,
+  warning: palette.warning,
+  error: palette.error,
+};
+
+export const darkColors = {
+  background: palette.trueDark,
+  surface: palette.darkSurface,
+  card: palette.darkGlass,
+  cardBorder: palette.darkGlassBorder,
+  primary: palette.sageGreenLight,
+  primaryLight: palette.sageGreen,
+  accent: palette.indigoLight,
+  text: palette.textDarkPrimary,
+  textSecondary: palette.textDarkSecondary,
+  textTertiary: palette.textTertiary,
+  tabBarBackground: palette.darkCard,
+  tabBarActive: palette.sageGreenLight,
+  tabBarInactive: palette.textTertiary,
+  statusBar: 'light' as const,
+  success: palette.success,
+  warning: palette.warning,
+  error: palette.error,
+};
