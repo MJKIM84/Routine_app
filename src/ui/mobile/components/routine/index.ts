@@ -4,3 +4,4 @@ export { DailyRoutineList } from './DailyRoutineList';
 export { RoutineFormModal } from './RoutineFormModal';
 export type { RoutineFormData } from './RoutineFormModal';
 export { TemplatePickerModal } from './TemplatePickerModal';
+export { RoutineTimerModal } from './RoutineTimerModal';

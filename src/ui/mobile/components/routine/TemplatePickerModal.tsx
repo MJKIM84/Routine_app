@@ -12,6 +12,7 @@ interface TemplatePickerModalProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (template: RoutineTemplate) => void;
+  onCustomPress?: () => void;
 }
 
 const SLOT_ORDER: TimeSlot[] = ['morning', 'afternoon', 'evening', 'night'];
@@ -20,6 +21,7 @@ export function TemplatePickerModal({
   visible,
   onClose,
   onSelect,
+  onCustomPress,
 }: TemplatePickerModalProps) {
   const colors = useThemeColors();
 
@@ -112,6 +114,21 @@ export function TemplatePickerModal({
               );
             })}
 
+            {onCustomPress && (
+              <TouchableOpacity
+                onPress={onCustomPress}
+                style={[
+                  styles.customBtn,
+                  { borderColor: colors.primary },
+                ]}
+                activeOpacity={0.7}
+              >
+                <Typography variant="body" style={{ color: colors.primary, fontWeight: '600' }}>
+                  ✏️ 직접 만들기
+                </Typography>
+              </TouchableOpacity>
+            )}
+
             <View style={{ height: 40 }} />
           </ScrollView>
         </View>
@@ -171,5 +188,13 @@ const styles = StyleSheet.create({
   },
   templateMeta: {
     marginLeft: spacing.sm,
+  },
+  customBtn: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: borderRadius.md,
+    marginTop: spacing.sm,
   },
 });

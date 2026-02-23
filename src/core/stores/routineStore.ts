@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { RoutineData, RoutineLogData } from '@core/types';
 import { getTodayKey } from '@core/utils/routine';
+import { scheduleRoutineAlarm, cancelRoutineAlarm, rescheduleAllAlarms } from '@platform/notifications';
 
 interface RoutineStoreState {
   // Data
@@ -16,7 +17,11 @@ interface RoutineStoreState {
 
   // Log actions
   completeRoutine: (routineId: string, note?: string) => void;
+  completeRoutineWithTimer: (routineId: string, durationSeconds: number, note?: string) => void;
   uncompleteRoutine: (routineId: string, dateKey?: string) => void;
+
+  // Alarm actions
+  syncAlarms: () => void;
 }
 
 let idCounter = 0;
@@ -53,15 +58,23 @@ export const useRoutineStore = create<RoutineStoreState>((set, get) => ({
       durationMinutes: input.durationMinutes,
       reminderEnabled: input.reminderEnabled,
       reminderMinutesBefore: input.reminderMinutesBefore,
+      repeatType: input.repeatType,
+      repeatIntervalDays: input.repeatIntervalDays,
       sortOrder: maxOrder + 1,
       isActive: true,
       isFromTemplate: input.isFromTemplate ?? false,
       templateId: input.templateId,
+      createdAt: Date.now(),
     };
 
     set((state) => ({
       routines: [...state.routines, newRoutine],
     }));
+
+    // Schedule alarm if enabled
+    if (newRoutine.reminderEnabled && newRoutine.scheduledTime) {
+      scheduleRoutineAlarm(newRoutine).catch(() => {});
+    }
 
     return id;
   },
@@ -72,9 +85,20 @@ export const useRoutineStore = create<RoutineStoreState>((set, get) => ({
         r.id === id ? { ...r, ...updates } : r,
       ),
     }));
+
+    // Re-schedule alarm if relevant fields changed
+    const routine = get().routines.find(r => r.id === id);
+    if (routine) {
+      if (routine.reminderEnabled && routine.scheduledTime) {
+        scheduleRoutineAlarm(routine).catch(() => {});
+      } else {
+        cancelRoutineAlarm(id).catch(() => {});
+      }
+    }
   },
 
   deleteRoutine: (id) => {
+    cancelRoutineAlarm(id).catch(() => {});
     set((state) => ({
       routines: state.routines.filter((r) => r.id !== id),
       logs: state.logs.filter((l) => l.routineId !== id),
@@ -87,6 +111,13 @@ export const useRoutineStore = create<RoutineStoreState>((set, get) => ({
         r.id === id ? { ...r, isActive: !r.isActive } : r,
       ),
     }));
+    // Sync alarms after toggle
+    const routine = get().routines.find(r => r.id === id);
+    if (routine && !routine.isActive) {
+      cancelRoutineAlarm(id).catch(() => {});
+    } else if (routine?.reminderEnabled && routine?.scheduledTime) {
+      scheduleRoutineAlarm(routine).catch(() => {});
+    }
   },
 
   reorderRoutines: (routineIds) => {
@@ -118,6 +149,27 @@ export const useRoutineStore = create<RoutineStoreState>((set, get) => ({
     }));
   },
 
+  completeRoutineWithTimer: (routineId, durationSeconds, note) => {
+    const today = getTodayKey();
+    const existing = get().logs.find(
+      (l) => l.routineId === routineId && l.dateKey === today,
+    );
+    if (existing) return;
+
+    const newLog: RoutineLogData = {
+      id: generateLogId(),
+      routineId,
+      completedAt: Date.now(),
+      dateKey: today,
+      durationSeconds,
+      note,
+    };
+
+    set((state) => ({
+      logs: [...state.logs, newLog],
+    }));
+  },
+
   uncompleteRoutine: (routineId, dateKey) => {
     const key = dateKey ?? getTodayKey();
     set((state) => ({
@@ -125,6 +177,11 @@ export const useRoutineStore = create<RoutineStoreState>((set, get) => ({
         (l) => !(l.routineId === routineId && l.dateKey === key),
       ),
     }));
+  },
+
+  syncAlarms: () => {
+    const { routines } = get();
+    rescheduleAllAlarms(routines).catch(() => {});
   },
 }));
 

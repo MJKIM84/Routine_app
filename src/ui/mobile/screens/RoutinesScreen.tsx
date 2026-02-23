@@ -8,6 +8,7 @@ import {
   RoutineFormModal,
   TemplatePickerModal,
   RoutineCard,
+  RoutineTimerModal,
 } from '@ui/mobile/components/routine';
 import type { RoutineFormData } from '@ui/mobile/components/routine';
 import { useRoutineStore } from '@core/stores/routineStore';
@@ -30,8 +31,10 @@ export function RoutinesScreen() {
   const rawRoutines = useRoutineStore((s) => s.routines);
   const rawLogs = useRoutineStore((s) => s.logs);
   const addRoutine = useRoutineStore((s) => s.addRoutine);
+  const updateRoutine = useRoutineStore((s) => s.updateRoutine);
   const deleteRoutine = useRoutineStore((s) => s.deleteRoutine);
   const completeRoutineFn = useRoutineStore((s) => s.completeRoutine);
+  const completeWithTimer = useRoutineStore((s) => s.completeRoutineWithTimer);
   const uncompleteRoutine = useRoutineStore((s) => s.uncompleteRoutine);
   const bloomComplete = useBloomStore((s) => s.completeRoutine);
 
@@ -48,8 +51,15 @@ export function RoutinesScreen() {
   const [showForm, setShowForm] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<RoutineData | undefined>();
+  const [timerRoutine, setTimerRoutine] = useState<RoutineData | null>(null);
+  const [showTimer, setShowTimer] = useState(false);
 
   const groups = useMemo(() => groupByTimeSlot(routines), [routines]);
+
+  const completedCount = useMemo(
+    () => routines.filter(r => completedSet.has(r.id)).length,
+    [routines, completedSet],
+  );
 
   const handleAddPress = useCallback(() => {
     setShowTemplates(true);
@@ -63,9 +73,13 @@ export function RoutinesScreen() {
 
   const handleFormSubmit = useCallback(
     (data: RoutineFormData) => {
-      addRoutine(data);
+      if (editingRoutine) {
+        updateRoutine(editingRoutine.id, data);
+      } else {
+        addRoutine(data);
+      }
     },
-    [addRoutine],
+    [addRoutine, updateRoutine, editingRoutine],
   );
 
   const handleTemplateSelect = useCallback(
@@ -102,10 +116,14 @@ export function RoutinesScreen() {
     [completedSet, completeRoutineFn, uncompleteRoutine, bloomComplete],
   );
 
+  const handleRoutinePress = useCallback((routine: RoutineData) => {
+    setEditingRoutine(routine);
+    setShowForm(true);
+  }, []);
+
   const handleLongPress = useCallback(
     (routine: RoutineData) => {
       haptics.warning();
-      // Simple confirm delete for now
       if (typeof window !== 'undefined' && window.confirm) {
         if (window.confirm(`"${routine.title}" 루틴을 삭제할까요?`)) {
           deleteRoutine(routine.id);
@@ -128,20 +146,44 @@ export function RoutinesScreen() {
     [deleteRoutine],
   );
 
+  const handleStartTimer = useCallback((routine: RoutineData) => {
+    setTimerRoutine(routine);
+    setShowTimer(true);
+  }, []);
+
+  const handleTimerComplete = useCallback(
+    (routineId: string, durationSeconds: number) => {
+      if (durationSeconds > 0) {
+        completeWithTimer(routineId, durationSeconds);
+      } else {
+        completeRoutineFn(routineId);
+      }
+      bloomComplete();
+      setShowTimer(false);
+      setTimerRoutine(null);
+    },
+    [completeWithTimer, completeRoutineFn, bloomComplete],
+  );
+
   const hasRoutines = routines.length > 0;
 
   return (
     <SafeLayout>
       <View style={styles.header}>
-        <Typography variant="h2">루틴</Typography>
+        <View>
+          <Typography variant="h2">루틴</Typography>
+          {hasRoutines && (
+            <Typography variant="caption" color="secondary" style={{ marginTop: 2 }}>
+              오늘 {completedCount}/{routines.length} 완료
+            </Typography>
+          )}
+        </View>
         {hasRoutines && (
           <TouchableOpacity
             onPress={handleAddPress}
             style={[styles.addBtn, { backgroundColor: colors.primary }]}
           >
-            <Typography variant="body" color="inverse">
-              + 추가
-            </Typography>
+            <Typography variant="body" color="inverse">+ 추가</Typography>
           </TouchableOpacity>
         )}
       </View>
@@ -150,17 +192,11 @@ export function RoutinesScreen() {
         {!hasRoutines ? (
           <GlassCard style={styles.emptyCard}>
             <View style={styles.emptyState}>
-              <Typography variant="h1" style={{ textAlign: 'center' }}>
-                ✨
-              </Typography>
+              <Typography variant="h1" style={{ textAlign: 'center' }}>✨</Typography>
               <Typography variant="h3" style={{ textAlign: 'center', marginTop: spacing.md }}>
                 첫 루틴을 만들어보세요
               </Typography>
-              <Typography
-                variant="body"
-                color="secondary"
-                style={{ textAlign: 'center', marginTop: spacing.sm }}
-              >
+              <Typography variant="body" color="secondary" style={{ textAlign: 'center', marginTop: spacing.sm }}>
                 건강한 습관의 시작은 작은 루틴부터입니다
               </Typography>
               <View style={styles.buttonRow}>
@@ -172,7 +208,10 @@ export function RoutinesScreen() {
                 <Button
                   title="✏️ 직접 만들기"
                   variant="outline"
-                  onPress={() => setShowForm(true)}
+                  onPress={() => {
+                    setEditingRoutine(undefined);
+                    setShowForm(true);
+                  }}
                   style={{ flex: 1, marginLeft: spacing.sm }}
                 />
               </View>
@@ -180,7 +219,6 @@ export function RoutinesScreen() {
           </GlassCard>
         ) : (
           <>
-            {/* Grouped routines */}
             {TIME_SLOT_ORDER.map((slot) => {
               const slotRoutines = groups[slot];
               if (slotRoutines.length === 0) return null;
@@ -201,22 +239,21 @@ export function RoutinesScreen() {
                       routine={routine}
                       isCompleted={completedSet.has(routine.id)}
                       onToggleComplete={handleToggle}
+                      onPress={handleRoutinePress}
                       onLongPress={handleLongPress}
+                      onStartTimer={handleStartTimer}
                     />
                   ))}
                 </View>
               );
             })}
 
-            {/* Quick add from templates */}
             <TouchableOpacity
               onPress={handleAddPress}
               style={[styles.quickAdd, { borderColor: colors.cardBorder }]}
               activeOpacity={0.7}
             >
-              <Typography variant="body" color="secondary">
-                + 루틴 추가하기
-              </Typography>
+              <Typography variant="body" color="secondary">+ 루틴 추가하기</Typography>
             </TouchableOpacity>
           </>
         )}
@@ -238,6 +275,17 @@ export function RoutinesScreen() {
         visible={showTemplates}
         onClose={() => setShowTemplates(false)}
         onSelect={handleTemplateSelect}
+        onCustomPress={handleCustomAdd}
+      />
+
+      <RoutineTimerModal
+        visible={showTimer}
+        routine={timerRoutine}
+        onClose={() => {
+          setShowTimer(false);
+          setTimerRoutine(null);
+        }}
+        onComplete={handleTimerComplete}
       />
     </SafeLayout>
   );
@@ -255,12 +303,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.sm,
   },
-  scrollContent: {
-    paddingBottom: spacing['2xl'],
-  },
-  emptyCard: {
-    marginTop: spacing.xl,
-  },
+  scrollContent: { paddingBottom: spacing['2xl'] },
+  emptyCard: { marginTop: spacing.xl },
   emptyState: {
     alignItems: 'center',
     paddingVertical: spacing['3xl'],
@@ -271,9 +315,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: spacing.lg,
   },
-  section: {
-    marginBottom: spacing.lg,
-  },
+  section: { marginBottom: spacing.lg },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
