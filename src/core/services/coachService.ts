@@ -1,4 +1,5 @@
 import type { CoachMessage, CoachPersona } from '@core/types';
+import { supabase } from '@core/api/supabase';
 
 /** Default coach persona */
 export const DEFAULT_COACH: CoachPersona = {
@@ -67,17 +68,41 @@ export const QUICK_SUGGESTIONS = [
 ];
 
 /**
- * Simulate AI response (local fallback when no API key).
- * In production, this would call Supabase Edge Function → Claude API.
+ * Call Supabase Edge Function for real AI response.
+ * Falls back to local demo if Edge Function unavailable.
+ */
+export async function getCoachResponseFromAPI(
+  message: string,
+  context: { routineCount?: number; streak?: number; bloomName?: string; recentCompletionRate?: number },
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke('ai-coach', {
+      body: { message, context },
+    });
+    if (error) return null;
+    return data?.reply ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get AI response - tries Edge Function first, falls back to local demo.
  */
 export async function getCoachResponse(
   messages: CoachMessage[],
   context: string,
 ): Promise<string> {
-  // Simulate network delay
+  const lastUserMessage = messages[messages.length - 1]?.content ?? '';
+
+  // Try real AI first
+  const aiResponse = await getCoachResponseFromAPI(lastUserMessage, {});
+  if (aiResponse) return aiResponse;
+
+  // Fallback: local demo responses
   await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 1200));
 
-  const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() ?? '';
+  const lastMessage = lastUserMessage.toLowerCase();
 
   // Simple pattern matching for demo
   if (lastMessage.includes('조언') || lastMessage.includes('하루')) {
