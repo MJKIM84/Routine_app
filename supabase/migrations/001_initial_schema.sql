@@ -5,7 +5,6 @@
 -- ============================================================
 
 -- ─── Extensions ─────────────────────────────────────────────
-create extension if not exists "uuid-ossp";
 create extension if not exists "moddatetime";
 
 -- ─── Helper: updated_at 자동 갱신 트리거 함수 ──────────────
@@ -74,7 +73,7 @@ create trigger on_auth_user_created
 -- 2. ROUTINES (루틴)
 -- ============================================================
 create table public.routines (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   description text,
@@ -121,7 +120,7 @@ create policy "Users can delete own routines"
 -- 3. ROUTINE_LOGS (루틴 완료 로그)
 -- ============================================================
 create table public.routine_logs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   routine_id uuid not null references public.routines(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   completed_at timestamptz not null default now(),
@@ -150,7 +149,7 @@ create policy "Users can delete own logs"
 -- 4. BLOOMS (Bloom 컴패니언)
 -- ============================================================
 create table public.blooms (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null default 'Bloom',
   species text not null default 'basic_sprout',
@@ -187,7 +186,7 @@ create policy "Users can update own blooms"
 -- 5. STREAKS (스트릭 추적)
 -- ============================================================
 create table public.streaks (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   routine_id uuid references public.routines(id) on delete set null,
   current_count int not null default 0,
@@ -220,7 +219,7 @@ create policy "Users can update own streaks"
 -- 6. COMMUNITY_POSTS (커뮤니티 게시글)
 -- ============================================================
 create table public.community_posts (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   content text not null,
   type text not null default 'tip' check (type in ('achievement', 'tip', 'encouragement', 'challenge')),
@@ -282,7 +281,7 @@ create policy "Users can remove own likes"
 -- 7. CHALLENGES (챌린지)
 -- ============================================================
 create table public.challenges (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   title text not null,
   description text not null,
   icon text not null default '🎯',
@@ -330,7 +329,7 @@ create policy "Users can leave challenges"
 -- 8. SUBSCRIPTIONS (구독 상태)
 -- ============================================================
 create table public.subscriptions (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade unique,
   tier text not null default 'free' check (tier in ('free', 'premium', 'premium_plus')),
   period text check (period in ('monthly', 'yearly')),
@@ -364,7 +363,7 @@ create policy "Users can update own subscription"
 -- 9. REFERRALS (추천 코드)
 -- ============================================================
 create table public.referrals (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   referrer_id uuid not null references auth.users(id) on delete cascade,
   referred_id uuid references auth.users(id) on delete set null,
   code text not null unique,
@@ -389,7 +388,7 @@ create policy "Users can create referral codes"
 -- 10. PUSH TOKENS (푸시 알림 토큰)
 -- ============================================================
 create table public.push_tokens (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   token text not null,
   platform text not null check (platform in ('ios', 'android', 'web')),
