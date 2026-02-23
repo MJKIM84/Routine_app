@@ -164,7 +164,7 @@ function MotivationWidget() {
         variant="caption"
         style={{ textAlign: 'center', marginTop: spacing.sm, lineHeight: 18, fontStyle: 'italic' }}
       >
-        "{quote.text}"
+        {`"${quote.text}"`}
       </Typography>
       <Typography variant="caption" color="tertiary" style={{ textAlign: 'center', marginTop: spacing.xs }}>
         — {quote.author}

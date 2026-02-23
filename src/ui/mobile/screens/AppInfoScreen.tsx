@@ -7,6 +7,7 @@ import { Typography } from '@ui/shared/components/Typography';
 import { useThemeColors } from '@theme/index';
 import { spacing, borderRadius } from '@theme/spacing';
 import { APP_NAME, APP_VERSION } from '@config/constants';
+import { getFullVersion } from '@core/utils/appVersion';
 
 const TECH_STACK = [
   { name: 'React Native', version: '0.81', icon: '⚛️' },
@@ -148,8 +149,9 @@ export function AppInfoScreen() {
           color="tertiary"
           style={{ textAlign: 'center', marginTop: spacing.xl, lineHeight: 18 }}
         >
-          Made with 💚 by RoutineFlow Team{'\n'}
-          {'\u00A9'} 2024 RoutineFlow. All rights reserved.
+          Made with {'\uD83D\uDC9A'} by RoutineFlow Team{'\n'}
+          {'\u00A9'} 2024-2025 RoutineFlow. All rights reserved.{'\n'}
+          Build {getFullVersion()}
         </Typography>
 
         <View style={{ height: Platform.OS === 'ios' ? 100 : 80 }} />

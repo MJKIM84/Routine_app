@@ -7,7 +7,6 @@ import {
   RoundedRect,
   LinearGradient,
   vec,
-  Paint,
   BlurMask,
 } from '@shopify/react-native-skia';
 import {
@@ -36,22 +35,18 @@ export function BloomCharacter({
   size = 200,
   isGrowing = false,
 }: BloomCharacterProps) {
-  // Web doesn't support Skia - use fallback
-  if (Platform.OS === 'web') {
-    return <BloomFallback stage={stage} mood={mood} size={size} />;
-  }
-
   const colors = getBloomColors(stage);
   const scale = getBloomScale(stage);
   const cx = size / 2;
   const cy = size / 2;
 
-  // Breathing animation
+  // Breathing animation — hooks must be called unconditionally
   const breathe = useSharedValue(1);
   const glow = useSharedValue(0.3);
   const bounce = useSharedValue(0);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     // Gentle breathing
     breathe.value = withRepeat(
       withTiming(1.05, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
@@ -64,16 +59,22 @@ export function BloomCharacter({
       -1,
       true,
     );
-  }, []);
+  }, [breathe, glow]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     if (isGrowing) {
       bounce.value = withSequence(
         withSpring(1.2, { damping: 4, stiffness: 200 }),
         withSpring(1, { damping: 8, stiffness: 150 }),
       );
     }
-  }, [isGrowing]);
+  }, [isGrowing, bounce]);
+
+  // Web doesn't support Skia - use fallback
+  if (Platform.OS === 'web') {
+    return <BloomFallback stage={stage} mood={mood} size={size} />;
+  }
 
   const bodyRadius = (size * 0.25) * scale;
   const headRadius = (size * 0.18) * scale;
